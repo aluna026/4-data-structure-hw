@@ -1,7 +1,11 @@
+# Aylin Luna
 #PSYC 259 Homework 3 - Data Structure
 #For full credit, provide answers for at least 8/11 questions
 
 #List names of students collaborating with: 
+# Madeline Hoorn
+# Megan Richardson
+# Krista Bebis
 
 ### SETUP: RUN THIS BEFORE STARTING ----------
 
@@ -38,8 +42,17 @@ load("rs_data.RData")
 # Why did some of the artist-song fail to match up?
 
 #ANSWER
+rs_joined_orig <- full_join(rs_new, rs_old, by = "Artist", "Song")
+nrow(rs_joined_orig) # 1423 rows of data
+view(rs_joined_orig)
 
+# Problems:
+  # There are a lot of NAs  
+  # There are duplicates (e.g., rows 1-3 are for the song Baby Love)
 
+# Why did some of the artist-song fail to match up?
+  # Because some of the songs are unique to each dataset. In other words, they do not appear in both datasets
+  # the error
 
 ### Question 2 ---------- 
 
@@ -50,6 +63,14 @@ load("rs_data.RData")
 # Make Rank and Year into integer variables for rs_old before binding them into rs_all
 
 #ANSWER
+rs_old <- rs_old %>% mutate(Source = "Old")
+rs_new <- rs_old %>% mutate(Source = "New")
+
+rs_all <- bind_rows(rs_old, rs_new)
+
+glimpse(rs_old)
+glimpse(rs_new)
+# did not get an error because both datasets have all columns as chr
 
 
 ### Question 3 ----------
@@ -62,6 +83,25 @@ load("rs_data.RData")
 # Use both functions to make all artists/song lowercase and remove any extra spaces
 
 #ANSWER
+rs_all <- rs_all %>% 
+  mutate(Song = str_remove_all(Song, "The")) %>% 
+  mutate(Artist = str_remove_all(Artist, "The"))
+
+rs_all <- rs_all %>% 
+  mutate(Song = str_replace_all(Song, "&", "and")) %>% 
+  mutate(Artist = str_replace_all(Artist, "&", "and"))
+
+rs_all <- rs_all %>% 
+  mutate(Song = str_remove_all(Song, "[:punct:]")) %>% 
+  mutate(Artist = str_remove_all(Artist, "[:punct:]"))
+
+rs_all <- rs_all %>% 
+  mutate(Song = str_to_lower(Song)) %>% 
+  mutate(Artist = str_to_lower(Artist))
+
+rs_all <- rs_all %>% 
+  mutate(Artist = str_trim(Artist)) %>% 
+  mutate(Song = str_trim(Song))
 
 
 ### Question 4 ----------
@@ -75,7 +115,6 @@ load("rs_data.RData")
 # in the new rs_joined compared to the original. Use nrow to check (there should be 799 rows)
 
 #ANSWER
-
 
 ### Question 5 ----------
 
