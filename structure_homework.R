@@ -42,17 +42,16 @@ load("rs_data.RData")
 # Why did some of the artist-song fail to match up?
 
 #ANSWER
-rs_joined_orig <- full_join(rs_new, rs_old, by = "Artist", "Song")
-nrow(rs_joined_orig) # 1423 rows of data
+rs_joined_orig <- full_join(rs_new, rs_old, by = c("Artist", "Song"))
+nrow(rs_joined_orig) # 860 rows of data
 view(rs_joined_orig)
 
 # Problems:
-  # There are a lot of NAs  
-  # There are duplicates (e.g., rows 1-3 are for the song Baby Love)
+  # There are a lot of NAs
+  # There are duplicates of songs
 
 # Why did some of the artist-song fail to match up?
   # Because some of the songs are unique to each dataset. In other words, they do not appear in both datasets
-  # the error
 
 ### Question 2 ---------- 
 
@@ -64,14 +63,17 @@ view(rs_joined_orig)
 
 #ANSWER
 rs_old <- rs_old %>% mutate(Source = "Old")
-rs_new <- rs_old %>% mutate(Source = "New")
+rs_new <- rs_new %>% mutate(Source = "New")
 
-rs_all <- bind_rows(rs_old, rs_new)
+rs_all <- bind_rows(rs_old, rs_new) # error did appear 
 
+glimpse(rs_old) # all chr
+glimpse(rs_new) # rank and year int
+
+rs_old <- rs_old %>% mutate(Rank = as.integer(Rank)) %>% mutate(Year = as.integer(Year))
 glimpse(rs_old)
-glimpse(rs_new)
-# did not get an error because both datasets have all columns as chr
 
+rs_all <- bind_rows(rs_old, rs_new) # no error!
 
 ### Question 3 ----------
 
@@ -84,25 +86,11 @@ glimpse(rs_new)
 
 #ANSWER
 rs_all <- rs_all %>% 
-  mutate(Song = str_remove_all(Song, "The")) %>% 
-  mutate(Artist = str_remove_all(Artist, "The"))
-
-rs_all <- rs_all %>% 
-  mutate(Song = str_replace_all(Song, "&", "and")) %>% 
-  mutate(Artist = str_replace_all(Artist, "&", "and"))
-
-rs_all <- rs_all %>% 
-  mutate(Song = str_remove_all(Song, "[:punct:]")) %>% 
-  mutate(Artist = str_remove_all(Artist, "[:punct:]"))
-
-rs_all <- rs_all %>% 
-  mutate(Song = str_to_lower(Song)) %>% 
-  mutate(Artist = str_to_lower(Artist))
-
-rs_all <- rs_all %>% 
-  mutate(Artist = str_trim(Artist)) %>% 
-  mutate(Song = str_trim(Song))
-
+  mutate(across(c(Song, Artist), str_remove_all, "The"),
+         across(c(Song, Artist), str_replace_all, "&", "and"),
+         across(c(Song, Artist), str_remove_all, "[:punct:]"),
+         across(c(Song, Artist), str_to_lower),
+         across(c(Song, Artist), str_trim))
 
 ### Question 4 ----------
 
@@ -115,6 +103,14 @@ rs_all <- rs_all %>%
 # in the new rs_joined compared to the original. Use nrow to check (there should be 799 rows)
 
 #ANSWER
+rs_all_split <- split(rs_all, rs_all$Source)
+old <- rs_all_split$Old
+new <- rs_all_split$New
+
+rs_joined <- full_join(old, new, by = c("Artist", "Song"), suffix = c("_Old", "_New"))
+
+nrow(rs_joined) #799!
+
 
 ### Question 5 ----------
 
@@ -127,7 +123,10 @@ rs_all <- rs_all %>%
 # You should now be able to see how each song moved up/down in rankings between the two lists
 
 #ANSWER
-
+rs_joined <- rs_joined %>% select(-c(Source_Old, Source_New)) %>% 
+  drop_na(Rank_Old, Rank_New) %>% 
+  mutate(Rank_Change = Rank_Old - Rank_New) %>% 
+  arrange(Rank_Change)
 
 ### Question 6 ----------
 
@@ -138,8 +137,15 @@ rs_all <- rs_all %>%
 # Which decade improved the most?
 
 #ANSWER
+rs_joined <- rs_joined %>% 
+  mutate(Decades = floor(Year_Old/10)*10, # calculating decade again
+         Decades = as.factor(Decades), # changing it to factor
+         Decades = str_c(Decades, "s")) # adding the s at the end
 
+rs_joined %>% group_by(Decades) %>% 
+  summarize(mean(Rank_Change))
 
+# The 1990s improved the most --> 54.7
 
 ### Question 7 ----------
 
@@ -149,7 +155,7 @@ rs_all <- rs_all %>%
 # proportion of songs in each of the top three decades (vs. all the rest)
 
 #ANSWER
-
+rs_joined %>% count(Decades)
 
 
 ### Question 8 ---------- 
