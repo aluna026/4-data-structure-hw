@@ -44,7 +44,7 @@ load("rs_data.RData")
 #ANSWER
 rs_joined_orig <- full_join(rs_new, rs_old, by = c("Artist", "Song"))
 nrow(rs_joined_orig) # 860 rows of data
-view(rs_joined_orig)
+#view(rs_joined_orig)
 
 # Problems:
   # There are a lot of NAs
@@ -65,7 +65,7 @@ view(rs_joined_orig)
 rs_old <- rs_old %>% mutate(Source = "Old")
 rs_new <- rs_new %>% mutate(Source = "New")
 
-rs_all <- bind_rows(rs_old, rs_new) # error did appear 
+# rs_all <- bind_rows(rs_old, rs_new) # error did appear 
 
 glimpse(rs_old) # all chr
 glimpse(rs_new) # rank and year int
@@ -164,7 +164,10 @@ rs_joined %>% group_by(Decades) %>%
 
 #ANSWER
 rs_joined %>% count(Decades) # number of songs in each decade
+rs_joined %>% mutate(Decades = fct_lump(Decades, n = 3, other_level = "Other")) 
 
+fct_count(rs_joined$Decades, sort = TRUE, prop = TRUE)
+  # Not really sure what to do here or if this is correct >.<
 
 ### Question 8 ---------- 
 
@@ -188,6 +191,7 @@ top20 <- top20 %>% mutate(Release = parse_date(Release, format = c("%d-%b-%Y")))
 top20 <- top20 %>% 
   pivot_wider(names_from = "Style", 
               values_from = "Value")
+# theres 20 rows wooohooo!!! 
 
 ### Question 10 ---------
 
@@ -200,8 +204,17 @@ top20 <- top20 %>%
 # Count the number of songs that were released in each season
 
 #ANSWER
+top20 <- top20 %>% left_join(rs_joined, by = c("Artist", "Song"))
+top20 <- top20 %>% mutate(month = month(Release, label = TRUE))
+glimpse(top20) # month is not in numbers anymore and in abbrev words
 
-
+top20 <- top20 %>% mutate(
+  season = case_when(month %in% c("Dec", "Jan", "Feb") ~ "Winter",
+                     month %in% c("Mar", "Apr", "May") ~ "Spring",
+                     month %in% c("Jun", "Jul", "Aug") ~ "Summer",
+                     month %in% c("Sep", "Oct", "Nov") ~ "Fall"))
+  # used month since i thought this would be easier than pulling from "Release"
+top20 %>% count(season)
 
 ### Question 11 ---------
 
@@ -211,6 +224,9 @@ top20 <- top20 %>%
 # Figure out which is the top-ranked song (from Rank_New) that used a minor key
 
 #ANSWER
+top20 <- top20 %>% mutate(
+  Quality = if_else(str_detect(Key, "m"), "Minor", "Major"))
 
-
-
+top20 %>% filter(Quality == "Minor") %>% 
+  slice_min(Rank_New, n = 1)
+# god only knows by beach boys
