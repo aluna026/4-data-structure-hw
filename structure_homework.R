@@ -70,7 +70,10 @@ rs_all <- bind_rows(rs_old, rs_new) # error did appear
 glimpse(rs_old) # all chr
 glimpse(rs_new) # rank and year int
 
-rs_old <- rs_old %>% mutate(Rank = as.integer(Rank)) %>% mutate(Year = as.integer(Year))
+rs_old <- rs_old %>% 
+  mutate(Rank = as.integer(Rank)) %>% 
+  mutate(Year = as.integer(Year))
+
 glimpse(rs_old)
 
 rs_all <- bind_rows(rs_old, rs_new) # no error!
@@ -103,9 +106,14 @@ rs_all <- rs_all %>%
 # in the new rs_joined compared to the original. Use nrow to check (there should be 799 rows)
 
 #ANSWER
-rs_all_split <- split(rs_all, rs_all$Source)
-old <- rs_all_split$Old
-new <- rs_all_split$New
+# Using Split function
+# rs_all_split <- split(rs_all, rs_all$Source)
+# old <- rs_all_split$Old
+# new <- rs_all_split$New
+
+old <- rs_all %>% filter(Source == "Old")
+new <- rs_all %>% filter(Source == "New")
+
 
 rs_joined <- full_join(old, new, by = c("Artist", "Song"), suffix = c("_Old", "_New"))
 
@@ -155,7 +163,7 @@ rs_joined %>% group_by(Decades) %>%
 # proportion of songs in each of the top three decades (vs. all the rest)
 
 #ANSWER
-rs_joined %>% count(Decades)
+rs_joined %>% count(Decades) # number of songs in each decade
 
 
 ### Question 8 ---------- 
@@ -165,7 +173,10 @@ rs_joined %>% count(Decades)
 # Use parse_date_time to fix it
 
 #ANSWER
+top20 <- read_csv("top_20.csv")
+glimpse(top20)
 
+top20 <- top20 %>% mutate(Release = parse_date(Release, format = c("%d-%b-%Y")))
 
 ### Question 9 --------
 
@@ -174,8 +185,9 @@ rs_joined %>% count(Decades)
 # overwrite top20 with the pivoted data (there should now be 20 rows!)
 
 #ANSWER
-
-
+top20 <- top20 %>% 
+  pivot_wider(names_from = "Style", 
+              values_from = "Value")
 
 ### Question 10 ---------
 
